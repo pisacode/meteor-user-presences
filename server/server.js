@@ -154,6 +154,7 @@ UserPresence = {
 		if (connection.metadata) {
 			update.$set.metadata = connection.metadata;
 		}
+		
 
 		var count = UsersSessions.update(query, update);
 
@@ -162,9 +163,9 @@ UserPresence = {
 		}
 
 		if (status === 'online') {
-			Meteor.users.update({_id: userId, statusDefault: 'online', status: {$ne: 'online'}}, {$set: {status: 'online'}});
+			Meteor.users.update({_id: userId, statusDefault: 'online', status: {$ne: 'online'}}, {$set: {status: 'online', statusTimestamp: now}});
 		} else if (status === 'away') {
-			Meteor.users.update({_id: userId, statusDefault: 'online', status: {$ne: 'away'}}, {$set: {status: 'away'}});
+			Meteor.users.update({_id: userId, statusDefault: 'online', status: {$ne: 'away'}}, {$set: {status: 'away',statusTimestamp: now}});
 		}
 	},
 
@@ -176,10 +177,11 @@ UserPresence = {
 		if (allowedStatus.indexOf(status) === -1) {
 			return;
 		}
+		var now = new Date();
 
 		logYellow('[user-presence] setDefaultStatus', userId, status);
 
-		var update = Meteor.users.update({_id: userId, statusDefault: {$ne: status}}, {$set: {statusDefault: status}});
+		var update = Meteor.users.update({_id: userId, statusDefault: {$ne: status}}, {$set: {statusDefault: status,statusTimestamp: now}});
 
 		if (update > 0) {
 			UserPresenceMonitor.processUser(userId, { statusDefault: status });
@@ -275,11 +277,13 @@ UserPresence = {
 					{statusConnection: {$ne: statusConnection}}
 				]
 			};
+			var now = new Date();
 
 			var update = {
 				$set: {
 					status: status,
 					statusConnection: statusConnection
+					statusTimestamp: now
 				}
 			};
 
